@@ -4,6 +4,7 @@ mod hittable;
 mod hittable_list;
 mod sphere;
 mod camera;
+mod material;
 extern crate rand;
 
 use vec3::Vec3;
@@ -13,38 +14,28 @@ use hittable_list::*;
 use sphere::Sphere;
 use camera::Camera;
 use rand::{Rng, thread_rng};
+use material::{Material, scatter};
 
-fn ray_color(r: &Ray, world: &HittableList) -> Vec3{
+fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Vec3{
     let mut rec = HitRecord::default();
 
-    if world.hit(&r, 0.0, std::f32::MAX, &mut rec){
-        let v: Vec3 = Vec3::new(
-            rec.normal().x() + 1.0,
-            rec.normal().y() + 1.0,
-            rec.normal().z() + 1.0
-        ) * 0.5;
-        return v;
-    } else {
-        let unit_direction: Vec3 = Vec3::unit_vector(&r.direction());
-        let t = 0.5 * (unit_direction.y() + 1.0);
-        return Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
+    if depth <= 0 {
+        return Vec3::new(0.0, 0.0, 0.0);
     }
-}
 
-fn hit_sphere(center: &Vec3, radius: f32, r: &Ray) -> f32{
-    let oc: Vec3 = r.origin() - *center;
-    let a : f32= Vec3::dot(&r.direction(), &r.direction());
-    let half_b: f32 = Vec3::dot(&oc, &r.direction());
-    let c : f32= Vec3::dot(&oc, &oc) - radius*radius;
-    let discriminant: f32= half_b*half_b - a*c;
-
-    if discriminant < 0.0{
-        return -1.0;
-    } else {
-        return (-half_b - discriminant.sqrt()) / a;
+    if world.hit(&r, 0.001, std::f32::MAX, &mut rec){
+        let mut scattered: Ray = Ray::default();
+        let mut attenuation: Vec3 = Vec3::default();
+        if scatter(&rec.material(), &r, &mut rec, &mut attenuation, &mut scattered){
+            //dbg!(rec.material());
+            return attenuation * ray_color(&scattered, &world, depth-1);
+        }
+        return Vec3::new(0.0, 0.0, 0.0)
     }
+    let unit_direction: Vec3 = Vec3::unit_vector(&r.direction());
+    let t = 0.5 * (unit_direction.y() + 1.0);
+    return Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
 }
-
 
 fn main() {
     
@@ -59,16 +50,21 @@ fn main() {
 
     // Setting the world
     let mut list: Vec<Box<dyn Hittable>> = Vec::new();
-    list.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
-    list.push(Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
+    //eprintln!("{:?}", ss);
+    list.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Material::Lambertian{albedo: Vec3::new(0.7, 0.3, 0.3)})));
+    list.push(Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Material::Lambertian{albedo: Vec3::new(0.8, 0.8, 0.0)})));
+    list.push(Box::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, Material::Metal{albedo: Vec3::new(0.8, 0.6, 0.2)})));
+    list.push(Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Material::Metal{albedo: Vec3::new(0.8, 0.8, 0.8)})));
+
     let world = HittableList::new(list);
 
     // Construct a PPM file from image data
     let w: i32 = 2000;
     let h: i32 = 1000;
     let max_value: i32 = 255;
-    let num_samples_per_pixel: i32 = 10;
-    let mut rng = rand::thread_rng();
+    let num_samples_per_pixel: i32 = 500;
+    let max_depth: i32 = 5;
+    let mut rng = thread_rng();
 
     println!("P3\n{} {}\n{}", w, h, max_value);
     for j in (0..h).rev(){
@@ -79,7 +75,7 @@ fn main() {
                 let u: f32 = (i as f32 + rng.gen::<f32>()) / w as f32;
                 let v: f32 = (j as f32 + rng.gen::<f32>())/ h as f32;
                 let r: Ray = camera.get_ray(u, v);
-                color += ray_color(&r, &world);
+                color += ray_color(&r, &world, max_depth);
             }
             color.write_color(num_samples_per_pixel);
         }

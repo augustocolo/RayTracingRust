@@ -1,4 +1,5 @@
 use std::ops;
+use rand::{Rng, thread_rng};
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Default)]
@@ -41,9 +42,9 @@ impl Vec3{
     pub fn write_color(self, samples_per_pixel: i32){
         let scale: f32 = 1.0 / (samples_per_pixel as f32);
 
-        let r : f32 = scale * self.e[0];
-        let g : f32 = scale * self.e[1];
-        let b : f32 = scale * self.e[2];
+        let r : f32 = (scale * self.e[0]).sqrt();
+        let g : f32 = (scale * self.e[1]).sqrt();
+        let b : f32 = (scale * self.e[2]).sqrt();
 
         let ir : u16 = (256.0 * Vec3::clamp(r, 0.0, 0.999)) as u16;
         let ig : u16 = (256.0 * Vec3::clamp(g, 0.0, 0.999)) as u16;
@@ -56,6 +57,34 @@ impl Vec3{
         u.e[0] * v.e[0] + u.e[1] * v.e[1] + u.e[2] * v.e[2]
     }
 
+    pub fn new_random_vector (min: f32, max:f32) -> Vec3 {
+        let mut rng = thread_rng();
+        Vec3{
+            e: [rng.gen::<f32>()*(max-min)+min, rng.gen::<f32>()*(max-min)+min, rng.gen::<f32>()*(max-min)+min]
+        }
+    }
+
+    pub fn new_random_vector_in_unit_sphere() -> Vec3 {
+        loop {
+            let v : Vec3 = Vec3::new_random_vector(-1.0, 1.0);
+            if v.length_squared() < 1.0 {
+                return v;
+            }
+        }  
+    }
+
+    pub fn new_random_unit_vector() -> Vec3{
+        let mut rng = thread_rng();
+        let a: f32 = rng.gen::<f32>() * 2.00 * 3.1415;  
+        let z: f32 = rng.gen::<f32>() * 2.00 - 1.00;
+        let r: f32 = (1.00 - z*z).sqrt();
+        Vec3::new(r * a.cos(), r * a.sin(), z)
+    }
+
+    pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+        *v - *n * 2.0 * Vec3::dot(v, n)
+    }
+
     // TODO: find appropriate place
     fn clamp(x: f32, min: f32, max: f32) -> f32{
         if x < min{
@@ -66,7 +95,10 @@ impl Vec3{
             return x;
         }
     }
+
 }
+
+    
 
 impl ops::Add for Vec3{
     type Output = Self;
@@ -131,52 +163,5 @@ impl ops::Neg for Vec3{
     type Output = Self;
     fn neg(self) -> Self::Output{
         Vec3 {e: [-self.e[0], -self.e[1], -self.e[2]]}
-    }
-}
-
-#[cfg(test)]
-mod tests{
-    use super::*;
-
-    #[test]
-    fn test_vec3_add() {
-        assert_eq!(
-            Vec3::new(2.0, 5.0, 3.25) + Vec3::new(5.5, 2.2, 3.2), 
-            Vec3::new(7.5, 7.2, 6.45)
-        )
-    }
-
-    #[test]
-    fn test_vec3_mul() {
-        assert_eq!(
-            Vec3::new(2.0, 5.0, 3.5) * Vec3::new(5.5, 2.2, 4.0), 
-            Vec3::new(11.0, 11.0, 14.0)
-        )
-    }
-
-    #[test]
-    fn test_vec3_mul_scalar() {
-        assert_eq!(
-            Vec3::new(2.0, 5.0, 3.25) * 2.0, 
-            Vec3::new(4.0, 10.0, 6.5)
-        )
-    }
-
-    #[test]
-    fn test_vec3_div_scalar(){
-        assert_eq!(
-            Vec3::new(2.0, 5.0, 10.0) / 2.0, 
-            Vec3::new(1.0, 2.5, 5.0)
-        )
-    }
-
-    #[test]
-    fn test_vec3_length(){
-        unimplemented!();
-    }
-
-    #[test]
-    fn test_vec3_length_squared(){
-        unimplemented!();
     }
 }

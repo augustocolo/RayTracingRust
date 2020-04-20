@@ -1,6 +1,6 @@
 use crate::vec3::Vec3;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Ray{
     A: Vec3,
     B: Vec3,
@@ -23,24 +23,4 @@ impl Ray {
         self.A + self.B * t
     }
 
-}
-
-#[cfg(test)]
-mod tests{
-    use super::*;
-
-    #[test]
-    fn test_ray_origin() {
-        unimplemented!();
-    }
-
-    #[test]
-    fn test_ray_direction() {
-        unimplemented!();
-    }
-
-    #[test]
-    fn test_ray_point_at_parameter(){
-        unimplemented!();
-    }
 }
