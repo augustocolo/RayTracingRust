@@ -57,6 +57,19 @@ impl Vec3{
         u.e[0] * v.e[0] + u.e[1] * v.e[1] + u.e[2] * v.e[2]
     }
 
+    pub fn cross(u: &Vec3, v:&Vec3) -> Vec3{
+        Vec3::new(
+            u.e[1] * v.e[2] - u.e[2] * v.e[1],
+            u.e[2] * v.e[0] - u.e[0] * v.e[2],
+            u.e[0] * v.e[1] - u.e[1] * v.e[0]
+        )
+    }
+
+    pub fn new_random_prob() -> f32 {
+        let mut rng = thread_rng();
+        rng.gen::<f32>()
+    }
+
     pub fn new_random_vector (min: f32, max:f32) -> Vec3 {
         let mut rng = thread_rng();
         Vec3{
@@ -73,6 +86,16 @@ impl Vec3{
         }  
     }
 
+    pub fn new_random_in_unit_disk() -> Vec3 {
+        loop {
+            let mut v: Vec3 = Vec3::new_random_vector(0.0, 1.0);
+            v.e[2] = 0.0;
+            if v.length_squared() < 1.0 {
+                return v
+            }
+        }
+    }
+
     pub fn new_random_unit_vector() -> Vec3{
         let mut rng = thread_rng();
         let a: f32 = rng.gen::<f32>() * 2.00 * 3.1415;  
@@ -83,6 +106,14 @@ impl Vec3{
 
     pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
         *v - *n * 2.0 * Vec3::dot(v, n)
+    }
+
+    pub fn refract(uv: &Vec3, n:&Vec3, etai_over_etat: f32) -> Vec3{
+        let cos_theta: f32 = Vec3::dot(& -(*uv), n);
+        let r_out_parallel: Vec3 = (*uv + (*n)*cos_theta) * etai_over_etat;
+        let r_out_perp: Vec3 = (*n) * (1.0 - r_out_parallel.length_squared()).sqrt();
+        //dbg!((*uv).length_squared(), etai_over_etat);
+        return r_out_parallel - r_out_perp
     }
 
     // TODO: find appropriate place

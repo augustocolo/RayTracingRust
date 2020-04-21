@@ -1,7 +1,6 @@
 use crate::ray::Ray;
 use crate::hittable::{HitRecord, Hittable};
 
-
 pub struct HittableList{
     list: Vec<Box<dyn Hittable>>,
 }
@@ -14,7 +13,7 @@ impl HittableList{
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord,) -> bool{
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool{
         let mut temp_rec: HitRecord= HitRecord::default();
         let mut hit_anything: bool = false;
         let mut closest_so_far: f32 = t_max;
@@ -27,6 +26,7 @@ impl Hittable for HittableList {
                 rec.set_p(temp_rec.p());
                 rec.set_normal(temp_rec.normal());
                 rec.set_material(temp_rec.material());
+                rec.set_front_face(temp_rec.front_face());
             }
         }
         hit_anything

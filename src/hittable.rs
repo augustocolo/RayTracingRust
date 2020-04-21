@@ -37,6 +37,10 @@ impl HitRecord {
         self.material
     }
 
+    pub fn front_face(self) -> bool{
+        self.front_face
+    }
+
     pub fn set_t(&mut self, val:f32){
         self.t = val;
     }
@@ -51,6 +55,10 @@ impl HitRecord {
 
     pub fn set_material(&mut self, val:Material){
         self.material = val;
+    }
+
+    pub fn set_front_face(&mut self, val:bool){
+        self.front_face = val;
     }
 }
 
